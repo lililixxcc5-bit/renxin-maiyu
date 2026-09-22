@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>预约管理后台 · 仁心脉语</title>
+<link rel="icon" href="images/logo.png">
+<link rel="stylesheet" href="css/style.css">
+<style>
+  /* ============ 管理后台专属增强样式 ============ */
+  body { background: #efe6d3; font-family: 'Noto Sans SC', sans-serif; color: #1c2621; margin: 0; }
+  .admin-wrap { max-width: 1200px; margin: 0 auto; padding: 40px 20px; }
+  .admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; }
+  .admin-header h1 { font-family: 'Noto Serif SC', serif; font-size: 32px; letter-spacing: 6px; color: #1c2621; margin: 0; }
+  .admin-header p { font-size: 14px; color: #46564d; margin-top: 6px; }
+  
+  /* 登录卡片 */
+  .login-card { max-width: 420px; margin: 0 auto 50px; background: #f8f2e3; border: 1px solid #d9cba7; border-radius: 4px; padding: 40px 36px; position: relative; box-shadow: 0 20px 40px -20px rgba(28,38,33,0.15); }
+  .login-card::before, .login-card::after { content: ""; position: absolute; width: 16px; height: 16px; }
+  .login-card::before { top: 8px; left: 8px; border-top: 2px solid #8b4a36; border-left: 2px solid #8b4a36; }
+  .login-card::after { bottom: 8px; right: 8px; border-bottom: 2px solid #8b4a36; border-right: 2px solid #8b4a36; }
+  .login-card h3 { font-family: 'Noto Serif SC', serif; font-size: 20px; text-align: center; letter-spacing: 4px; margin-bottom: 30px; }
+  .login-field { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
+  .login-field label { font-size: 12px; font-family: 'JetBrains Mono', monospace; letter-spacing: 2px; color: #46564d; }
+  .login-field input { padding: 14px 16px; border: 1px solid #d9cba7; background: #fffdf6; border-radius: 3px; font-family: 'Noto Serif SC', serif; font-size: 15px; outline: none; }
+  .login-field input:focus { border-color: #8b4a36; }
+  .login-btn { width: 100%; padding: 16px; margin-top: 10px; background: #8b4a36; color: #f8f2e3; font-family: 'Noto Serif SC', serif; font-size: 16px; font-weight: bold; letter-spacing: 8px; text-indent: 8px; border: none; border-radius: 3px; cursor: pointer; transition: all .2s; }
+  .login-btn:hover { background: #713a29; transform: translateY(-1px); }
+
+  /* 管理面板 */
+  #admin-area { display: none; }
+  .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 40px; }
+  .stat-card { background: #f8f2e3; border: 1px solid #d9cba7; padding: 28px; border-radius: 4px; position: relative; box-shadow: 0 4px 12px -6px rgba(28,38,33,0.08); }
+  .stat-card::before { content: ""; position: absolute; top: 14px; right: 14px; width: 8px; height: 8px; background: #8b4a36; border-radius: 50%; }
+  .stat-card b { display: block; font-family: 'Noto Serif SC', serif; font-size: 32px; color: #1c2621; line-height: 1.2; }
+  .stat-card span { font-size: 13px; color: #46564d; font-family: 'Noto Serif SC', serif; margin-top: 8px; display: block; }
+
+  /* ============ 员工管理 ============ */
+  .staff-section { background: #f8f2e3; border: 1px solid #d9cba7; border-radius: 4px; padding: 24px 30px; margin-bottom: 40px; box-shadow: 0 4px 12px -6px rgba(28,38,33,0.08); }
+  .staff-section h3 { font-family: 'Noto Serif SC', serif; font-size: 18px; margin: 0 0 16px; display: flex; justify-content: space-between; align-items: center; }
+  .staff-tags { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; }
+  .staff-tag { background: #dfeadf; border: 1px solid #6f8a78; color: #4c6b58; padding: 6px 12px; border-radius: 99px; font-size: 14px; display: flex; align-items: center; gap: 8px; }
+  .staff-tag .remove { cursor: pointer; font-weight: bold; color: #8b4a36; }
+  .staff-tag .remove:hover { color: #1c2621; }
+  .staff-add-form { display: flex; gap: 10px; }
+  .staff-add-form input { padding: 10px 16px; border: 1px solid #d9cba7; background: #fffdf6; border-radius: 3px; font-size: 14px; outline: none; width: 200px; }
+  .staff-add-form button { padding: 10px 20px; background: #4c6b58; color: #f8f2e3; border: none; border-radius: 3px; cursor: pointer; font-size: 14px; }
+
+  /* ============ 排班看板 ============ */
+  .schedule-section { background: #f8f2e3; border: 1px solid #d9cba7; border-radius: 4px; padding: 30px; margin-bottom: 40px; box-shadow: 0 4px 12px -6px rgba(28,38,33,0.08); }
+  .schedule-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #d9cba7; padding-bottom: 16px; margin-bottom: 24px; }
+  .schedule-header h2 { font-family: 'Noto Serif SC', serif; font-size: 20px; letter-spacing: 4px; margin: 0; }
+  .schedule-header .controls { display: flex; gap: 12px; align-items: center; }
+  .schedule-header input { padding: 10px 16px; border: 1px solid #d9cba7; background: #fffdf6; border-radius: 3px; font-family: 'Noto Serif SC', serif; font-size: 15px; outline: none; }
+  .btn-schedule { padding: 10px 24px; background: #4c6b58; color: #f8f2e3; border: none; border-radius: 3px; cursor: pointer; font-family: 'Noto Serif SC', serif; font-size: 15px; font-weight: bold; transition: all .2s; }
+  .btn-schedule:hover { background: #3b5546; transform: translateY(-1px); }
+  
+  .schedule-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+  .schedule-card { border: 1px solid #d9cba7; border-radius: 4px; padding: 16px; background: #fffdf6; transition: all .2s; display: flex; flex-direction: column; gap: 12px; }
+  .schedule-card.full { border-color: #8b4a36; background: #fdf6f3; }
+  .schedule-card.warning { border-color: #a9793c; background: #fdfaf2; }
+  .schedule-slot-head { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed #d9cba7; padding-bottom: 8px; }
+  .slot-time { font-family: 'JetBrains Mono', monospace; font-size: 15px; font-weight: 700; color: #1c2621; }
+  .slot-cap { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 99px; }
+  .slot-cap.free { background: #dfeadf; color: #4c6b58; }
+  .slot-cap.warn { background: #f3e6c9; color: #8a6129; }
+  .slot-cap.full { background: #f2dcd6; color: #8b4a36; }
+  
+  .slot-staff { font-size: 13px; color: #46564d; background: #efe6d3; padding: 8px 12px; border-radius: 3px; border-left: 3px solid #4c6b58; }
+  .slot-staff b { color: #1c2621; }
+  .slot-staff .no-staff { color: #d9cba7; font-style: italic; }
+  
+  .slot-users { display: flex; flex-direction: column; gap: 6px; margin-top: 4px; }
+  .slot-user { display: flex; justify-content: space-between; font-size: 12px; color: #46564d; }
+  .slot-user b { color: #1c2621; }
+  .slot-empty { font-size: 12px; color: #d9cba7; text-align: center; padding: 4px 0; }
+
+  /* 工具栏和表格 */
+  .toolbar { display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: wrap; }
+  .toolbar input, .toolbar select { padding: 12px 16px; border: 1px solid #d9cba7; background: #f8f2e3; border-radius: 3px; font-size: 14px; outline: none; }
+  .toolbar input:focus, .toolbar select:focus { border-color: #8b4a36; }
+  .toolbar #search-input { flex: 1; min-width: 200px; }
+  .toolbar .btn-ghost { padding: 12px 24px; border: 1px solid #1c2621; background: transparent; color: #1c2621; border-radius: 3px; cursor: pointer; }
+  .toolbar .btn-ghost:hover { background: #1c2621; color: #f8f2e3; }
+
+  .table-wrap { background: #f8f2e3; border: 1px solid #d9cba7; border-radius: 4px; overflow-x: auto; box-shadow: 0 10px 30px -20px rgba(28,38,33,0.1); }
+  .data-table { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 960px; }
+  .data-table th { background: #e4d7b9; padding: 16px 20px; text-align: left; font-family: 'Noto Serif SC', serif; font-weight: 600; color: #46564d; letter-spacing: 1.5px; white-space: nowrap; border-bottom: 2px solid #d9cba7; }
+  .data-table td { padding: 16px 20px; border-bottom: 1px solid #d9cba7; color: #1c2621; white-space: nowrap; }
+  .data-table tbody tr:hover { background: #efe6d3; }
+  .data-table td.note-cell { white-space: normal; max-width: 220px; color: #46564d; }
+
+  .badge { display: inline-block; padding: 4px 12px; border-radius: 99px; font-size: 12px; font-weight: 500; }
+  .badge.待确认 { background: #f3e6c9; color: #8a6129; }
+  .badge.已确认 { background: #dfeadf; color: #4c6b58; }
+  .badge.已完成 { background: #e2e6e3; color: #46564d; }
+  .badge.已取消 { background: #f2dcd6; color: #8b4a36; }
+  .badge.已拒绝 { background: #f2dcd6; color: #8b4a36; }
+
+  select.status-select { font-size: 12px; padding: 6px 10px; border: 1px solid #d9cba7; border-radius: 3px; background: #fffdf6; outline: none; cursor: pointer; margin-right: 6px; }
+  .del-btn { font-size: 12px; color: #8b4a36; background: transparent; border: 1px solid #8b4a36; padding: 6px 12px; border-radius: 3px; cursor: pointer; transition: all .2s; }
+  .del-btn:hover { background: #8b4a36; color: #f8f2e3; }
+
+  .admin-footer { text-align: center; margin-top: 60px; padding: 30px 0; border-top: 1px solid #d9cba7; color: #46564d; font-size: 13px; }
+
+  @media (max-width: 720px) {
+    .stats-grid { grid-template-columns: 1fr; }
+    .login-card { margin: 0 16px 30px; padding: 30px 20px; }
+    .schedule-header { flex-direction: column; align-items: flex-start; gap: 12px; }
+    .staff-add-form { flex-direction: column; }
+    .staff-add-form input { width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+<div class="admin-wrap">
+  <div class="admin-header">
+    <div>
+      <h1>预约管理后台</h1>
+      <p>查看、确认、完成或取消用户提交的预约。当前为纯前端演示版，数据保存在本地浏览器中。</p>
+    </div>
+    <button class="btn-ghost" id="refresh-btn" style="padding: 12px 24px; border: 1px solid #1c2621; background: transparent; border-radius: 3px; cursor: pointer; font-weight: bold;">刷新数据</button>
+  </div>
+
+  <!-- 登录卡片 -->
+  <div id="login-area" class="login-card">
+    <h3>管理员登录</h3>
+    <div class="login-field">
+      <label>账号 / USERNAME</label>
+      <input type="text" id="username" value="admin">
+    </div>
+    <div class="login-field">
+      <label>密码 / PASSWORD</label>
+      <input type="password" id="password" value="admin123">
+    </div>
+    <button class="login-btn" onclick="login()">登 录</button>
+  </div>
+
+  <!-- 管理区域 -->
+  <div id="admin-area">
+    <!-- 数据统计 -->
+    <div class="stats-grid" id="admin-stats"></div>
+
+    <!-- 员工管理 -->
+    <div class="staff-section">
+      <h3>👥 员工池管理</h3>
+      <div class="staff-tags" id="staff-tags"></div>
+      <div class="staff-add-form">
+        <input type="text" id="new-staff-name" placeholder="输入员工姓名，如：张三">
+        <button onclick="addStaff()">添加员工</button>
+      </div>
+    </div>
+
+    <!-- 排班看板 -->
+    <div class="schedule-section">
+      <div class="schedule-header">
+        <h2>📅 排班看板</h2>
+        <div class="controls">
+          <label style="font-size:13px;color:#46564d;">选择日期：</label>
+          <input type="date" id="schedule-date">
+          <button class="btn-schedule" onclick="runAutoSchedule()">⚡ 一键自动排班</button>
+        </div>
+      </div>
+      <div class="schedule-grid" id="schedule-grid">
+        <!-- 排班卡片由 JS 动态生成 -->
+      </div>
+    </div>
+
+    <!-- 搜索与筛选 -->
+    <div class="toolbar">
+      <input type="text" id="search-input" placeholder="按姓名 / 电话 / 单位搜索">
+      <select id="status-filter">
+        <option value="all">全部状态</option>
+        <option value="待确认">待确认</option>
+        <option value="已确认">已确认</option>
+        <option value="已完成">已完成</option>
+        <option value="已取消">已取消</option>
+        <option value="已拒绝">已拒绝</option>
+      </select>
+      <input type="date" id="date-filter">
+      <button class="btn-ghost" id="clear-filter-btn" style="border: 1px solid #1c2621; background: transparent; padding: 12px 24px; border-radius: 3px; cursor: pointer;">清除筛选</button>
+    </div>
+
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>ID</th><th>姓名</th><th>电话</th><th>单位/机构</th><th>预约类型</th><th>日期</th><th>时段</th><th>留言</th><th>状态</th><th>提交时间</th><th>操作</th>
+          </tr>
+        </thead>
+        <tbody id="admin-tbody">
+          <tr><td colspan="11" style="text-align:center;color:#d9cba7;padding:40px;">正在加载...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="admin-footer">
+    © 2026 仁心脉语 · RenXinMaiYu | 后台管理页面，仅供内部使用
+  </div>
+</div>
+
+<script>
+  const STORAGE_KEY = 'rxmy_bookings';
+  const HEALTH_KEY = 'rxmy_health_records';
+  const STAFF_KEY = 'rxmy_staff';
+  const SCHEDULE_KEY = 'rxmy_schedules';
+  const STATUS_OPTIONS = ['待确认', '已确认', '已完成', '已取消', '已拒绝'];
+
+  // 默认时间段（需与用户预约页保持一致）
+  const DEFAULT_SLOTS = [
+    "09:00 - 10:00", "10:00 - 11:00", "11:00 - 12:00",
+    "14:00 - 15:00", "15:00 - 16:00", "16:00 - 17:00", "19:00 - 20:00"
+  ];
+  const SLOT_CAPACITY = 3; // 每个时段最多容纳 3 人
+
+  // 默认员工池
+  const INITIAL_STAFF = ['黎昌成', '戴锦生', '吴泳瑜', '蔡紫欣', '杨诗琪'];
+
+  function qs(id) { return document.getElementById(id); }
+  function getBookings() { try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); } catch (e) { return []; } }
+  function saveBookings(list) { localStorage.setItem(STORAGE_KEY, JSON.stringify(list)); }
+  function getHealthRecords() { try { return JSON.parse(localStorage.getItem(HEALTH_KEY) || '[]'); } catch (e) { return []; } }
+  function saveHealthRecords(list) { localStorage.setItem(HEALTH_KEY, JSON.stringify(list)); }
+  
+  // 员工管理
+  function getStaff() { try { return JSON.parse(localStorage.getItem(STAFF_KEY)) || INITIAL_STAFF; } catch (e) { return INITIAL_STAFF; } }
+  function saveStaff(list) { localStorage.setItem(STAFF_KEY, JSON.stringify(list)); }
+  
+  // 排班管理
+  function getSchedules() { try { return JSON.parse(localStorage.getItem(SCHEDULE_KEY) || '{}'); } catch (e) { return {}; } }
+  function saveSchedules(obj) { localStorage.setItem(SCHEDULE_KEY, JSON.stringify(obj)); }
+
+  function login() {
+    if (qs('username').value === 'admin' && qs('password').value === 'admin123') {
+      localStorage.setItem('admin_token', 'fake_token');
+      qs('login-area').style.display = 'none';
+      qs('admin-area').style.display = 'block';
+      initAdmin();
+    } else { alert('账号或密码错误（演示账号：admin / admin123）'); }
+  }
+
+  function initAdmin() {
+    const today = new Date().toISOString().slice(0, 10);
+    qs('schedule-date').value = today;
+    renderStaff();
+    renderSchedule(today);
+    loadBookings();
+  }
+
+  // ==================== 员工管理 ====================
+  function renderStaff() {
+    const list = getStaff();
+    const el = qs('staff-tags');
+    if (!list.length) {
+      el.innerHTML = '<span style="color:#d9cba7;font-size:14px;">暂无员工，请添加</span>';
+      return;
+    }
+    el.innerHTML = list.map((name, index) => `
+      <span class="staff-tag">
+        ${name}
+        <span class="remove" onclick="removeStaff(${index})">✕</span>
+      </span>
+    `).join('');
+  }
+
+  function addStaff() {
+    const input = qs('new-staff-name');
+    const name = input.value.trim();
+    if (!name) return alert('请输入员工姓名！');
+    const list = getStaff();
+    if (list.includes(name)) return alert('该员工已存在！');
+    list.push(name);
+    saveStaff(list);
+    renderStaff();
+    input.value = '';
+  }
+
+  function removeStaff(index) {
+    if (!confirm('确定要删除该员工吗？')) return;
+    const list = getStaff();
+    list.splice(index, 1);
+    saveStaff(list);
+    renderStaff();
+    // 刷新排班看板，移除已删除员工的排班
+    renderSchedule(qs('schedule-date').value);
+  }
+
+  // ==================== 排班逻辑 ====================
+  // 将时间字符串标准化为 DEFAULT_SLOTS 格式
+  function normalizeSlot(slotStr) {
+    if (!slotStr) return '';
+    // 直接匹配
+    if (DEFAULT_SLOTS.includes(slotStr)) return slotStr;
+    // 如果是 "10:30" 这种格式，寻找对应的时段
+    if (slotStr.includes(':')) {
+      const hour = parseInt(slotStr.split(':')[0]);
+      const paddedHour = hour.toString().padStart(2, '0');
+      const found = DEFAULT_SLOTS.find(s => s.startsWith(paddedHour));
+      if (found) return found;
+    }
+    return slotStr; // 兜底
+  }
+
+  // 渲染排班看板
+  function renderSchedule(dateStr) {
+    const grid = qs('schedule-grid');
+    const allBookings = getBookings();
+    const allSchedules = getSchedules();
+    const daySchedule = allSchedules[dateStr] || {};
+    
+    // 过滤出当前日期的有效预约
+    const dayBookings = allBookings.filter(b => 
+      b.date === dateStr && b.status !== '已取消' && b.status !== '已拒绝'
+    );
+
+    // 按标准化时段分组
+    const slotMap = {};
+    DEFAULT_SLOTS.forEach(s => slotMap[s] = []);
+    dayBookings.forEach(b => {
+      const normalized = normalizeSlot(b.slot);
+      if (slotMap[normalized]) slotMap[normalized].push(b);
+    });
+
+    let html = '';
+    DEFAULT_SLOTS.forEach(slot => {
+      const users = slotMap[slot];
+      const count = users.length;
+      const staffAssigned = daySchedule[slot] || [];
+      
+      let capClass = 'free';
+      let capText = `余 ${SLOT_CAPACITY - count} 位`;
+
+      if (count >= SLOT_CAPACITY) {
+        capClass = 'full';
+        capText = '已满';
+      } else if (count === SLOT_CAPACITY - 1) {
+        capClass = 'warn';
+        capText = '紧张';
+      }
+
+      const userList = users.length > 0 
+        ? users.map(u => `<div class="slot-user"><span><b>${u.name}</b> (${u.phone})</span><span>${u.status}</span></div>`).join('')
+        : '<div class="slot-empty">暂无预约</div>';
+
+      const staffText = staffAssigned.length > 0 
+        ? `👤 值班员工：<b>${staffAssigned.join('、')}</b>`
+        : '<span class="no-staff">👤 未安排值班员工</span>';
+
+      html += `
+        <div class="schedule-card ${capClass}">
+          <div class="schedule-slot-head">
+            <span class="slot-time">${slot}</span>
+            <span class="slot-cap ${capClass}">${capText}</span>
+          </div>
+          <div class="slot-staff">${staffText}</div>
+          <div class="slot-users">
+            ${userList}
+          </div>
+        </div>
+      `;
+    });
+
+    grid.innerHTML = html;
+  }
+
+  // ★★★ 一键自动排班 ★★★
+  function runAutoSchedule() {
+    const staffList = getStaff();
+    if (staffList.length === 0) return alert('员工池为空，请先添加员工！');
+    
+    const date = qs('schedule-date').value;
+    if (!date) return alert('请先选择排班日期！');
+
+    const dayBookings = getBookings().filter(b => 
+      b.date === date && b.status !== '已取消' && b.status !== '已拒绝'
+    );
+
+    if (dayBookings.length === 0) {
+      return alert('当天没有有效预约，无需排班。');
+    }
+
+    // 按标准化时段统计人数
+    const slotCounts = {};
+    DEFAULT_SLOTS.forEach(s => slotCounts[s] = 0);
+    dayBookings.forEach(b => {
+      const normalized = normalizeSlot(b.slot);
+      if (slotCounts[normalized] !== undefined) slotCounts[normalized]++;
+    });
+
+    const newSchedule = {};
+    let staffPointer = 0;
+
+    // 轮询分配算法
+    DEFAULT_SLOTS.forEach(slot => {
+      const count = slotCounts[slot];
+      if (count > 0) {
+        // 规则：1-2 人安排 1 名员工，3 人及以上安排 2 名员工
+        const needed = count >= 3 ? 2 : 1;
+        const assigned = [];
+        for (let i = 0; i < needed; i++) {
+          assigned.push(staffList[staffPointer % staffList.length]);
+          staffPointer++;
+        }
+        newSchedule[slot] = assigned;
+      } else {
+        newSchedule[slot] = [];
+      }
+    });
+
+    // 保存排班结果
+    const allSchedules = getSchedules();
+    allSchedules[date] = newSchedule;
+    saveSchedules(allSchedules);
+
+    // 重新渲染
+    renderSchedule(date);
+    alert('自动排班完成！请查看排班看板。');
+  }
+
+  // ==================== 预约管理与表格 ====================
+  function generateHealthRecord(booking) {
+    const idx = Math.floor(Math.random() * 8);
+    const CONDITIONS = [
+      { constitution: '气虚质', syndrome: '气虚证', desc: '元气不足，以神疲乏力、少气懒言、自汗等为主要特征。', face: '面色淡白', tongue: '舌质淡、苔薄白', diet: '宜食山药、黄芪、大枣。', life: '规律作息，避免熬夜。', exercise: '散步、太极拳。', emotion: '保持心情舒畅。', acupoints: '足三里、气海', herbs: ['山药','黄芪'] },
+      { constitution: '阳虚质', syndrome: '阳虚证', desc: '阳气不足，以畏寒怕冷、手足不温、喜热饮食等虚寒表现为主要特征。', face: '面色㿠白', tongue: '舌质淡胖、苔白滑', diet: '宜食羊肉、生姜、桂圆。', life: '注意保暖。', exercise: '快走、慢跑。', emotion: '保持乐观。', acupoints: '命门、肾俞', herbs: ['当归','生姜'] },
+      { constitution: '阴虚质', syndrome: '阴虚火旺', desc: '阴液亏少，以口燥咽干、手足心热、喜冷饮等虚热表现为主要特征。', face: '颧红、唇干', tongue: '舌红少苔', diet: '宜食银耳、百合。', life: '早睡早起。', exercise: '散步、游泳。', emotion: '保持平和。', acupoints: '太溪、三阴交', herbs: ['银耳','百合'] },
+      { constitution: '痰湿质', syndrome: '脾虚湿盛', desc: '痰湿凝聚，以形体肥胖、腹部肥满、口黏苔腻等为主要特征。', face: '面垢油光', tongue: '舌体胖大、苔白腻', diet: '宜食薏米、赤小豆。', life: '环境干燥通风。', exercise: '有氧运动。', emotion: '多参加户外活动。', acupoints: '丰隆、阴陵泉', herbs: ['薏米','赤小豆'] },
+      { constitution: '湿热质', syndrome: '湿热蕴结', desc: '湿热内蕴，以面垢油光、口苦口干、易生痤疮等为主要特征。', face: '面垢油光、易生痤疮', tongue: '舌质红、苔黄腻', diet: '宜食绿豆、冬瓜。', life: '凉爽通风。', exercise: '大运动量有氧运动。', emotion: '心态平和。', acupoints: '阴陵泉、三阴交', herbs: ['绿豆','荷叶'] },
+      { constitution: '血瘀质', syndrome: '血瘀证', desc: '血行不畅，以肤色晦暗、舌质紫暗、易忘事等为主要特征。', face: '面色晦暗', tongue: '舌质紫暗', diet: '宜食山楂、玫瑰花。', life: '注意保暖。', exercise: '促进血液循环的运动。', emotion: '心情舒畅。', acupoints: '血海、膈俞', herbs: ['山楂','玫瑰花'] },
+      { constitution: '气郁质', syndrome: '肝郁气滞', desc: '长期情志不畅、气机郁滞，以性格内向、情绪不稳定、胸胁胀满等为主要特征。', face: '面色偏暗', tongue: '舌质淡红', diet: '宜食玫瑰花、陈皮。', life: '明亮通风。', exercise: '调节情绪的运动。', emotion: '培养乐观性格。', acupoints: '太冲、行间', herbs: ['玫瑰花','陈皮'] },
+      { constitution: '气血两虚', syndrome: '气血两虚证', desc: '气血不足，以面色淡白、神疲乏力、心悸失眠等为主要特征。', face: '面色苍白', tongue: '舌质淡', diet: '宜食红枣、桂圆。', life: '保证充足睡眠。', exercise: '温和运动。', emotion: '心情愉悦。', acupoints: '足三里、血海', herbs: ['红枣','桂圆'] }
+    ];
+    const c = CONDITIONS[idx];
+    return {
+      id: 'hr_' + Date.now(), bookingId: booking.id, phone: booking.phone, name: booking.name,
+      code: booking.code, serviceName: booking.typeTitle, date: booking.date, slot: booking.slot,
+      constitution: c.constitution, syndrome: c.syndrome, desc: c.desc, face: c.face, tongue: c.tongue,
+      heartRate: 72 + Math.floor(Math.random() * 10) - 4, temperature: (36.2 + Math.random() * 0.6).toFixed(1),
+      diet: c.diet, life: c.life, exercise: c.exercise, emotion: c.emotion,
+      acupoints: c.acupoints, herbs: c.herbs, createdAt: new Date().toLocaleString('zh-CN')
+    };
+  }
+
+  function renderStats() {
+    const list = getBookings();
+    const pending = list.filter(b => b.status === '待确认').length;
+    const today = new Date().toISOString().slice(0, 10);
+    const todayCount = list.filter(b => b.date === today).length;
+    qs('admin-stats').innerHTML = `
+      <div class="stat-card"><b>${list.length}</b><span>累计预约总数</span></div>
+      <div class="stat-card"><b>${pending}</b><span>待确认预约</span></div>
+      <div class="stat-card"><b>${todayCount}</b><span>今日预约</span></div>
+    `;
+  }
+
+  function loadBookings() {
+    qs('admin-tbody').innerHTML = '<tr><td colspan="11" style="text-align:center;color:#d9cba7;padding:40px;">正在加载...</td></tr>';
+    let list = getBookings();
+    const q = qs('search-input').value.trim().toLowerCase();
+    const status = qs('status-filter').value;
+    const date = qs('date-filter').value;
+    if (q) list = list.filter(b => b.name.toLowerCase().includes(q) || b.phone.includes(q) || (b.org && b.org.toLowerCase().includes(q)));
+    if (status && status !== 'all') list = list.filter(b => b.status === status);
+    if (date) list = list.filter(b => b.date === date);
+    list.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+    if (!list.length) {
+      qs('admin-tbody').innerHTML = '<tr><td colspan="11" style="text-align:center;color:#d9cba7;padding:40px;">暂无符合条件的预约记录</td></tr>';
+      renderStats();
+      return;
+    }
+
+    qs('admin-tbody').innerHTML = list.map(b => {
+      const opts = STATUS_OPTIONS.map(s => `<option value="${s}" ${s === b.status ? 'selected' : ''}>${s}</option>`).join('');
+      return `
+        <tr>
+          <td>#${b.id.slice(-4)}</td>
+          <td>${b.name}</td>
+          <td>${b.phone}</td>
+          <td>${b.org || '—'}</td>
+          <td>${b.typeTitle}</td>
+          <td>${b.date}</td>
+          <td>${b.slot}</td>
+          <td class="note-cell">${b.note || '—'}</td>
+          <td><span class="badge ${b.status}">${b.status}</span></td>
+          <td>${b.createdAt}</td>
+          <td>
+            <select class="status-select" onchange="updateStatus('${b.id}', this.value)">${opts}</select>
+            <button class="del-btn" onclick="deleteBooking('${b.id}')">删除</button>
+          </td>
+        </tr>
+      `;
+    }).join('');
+    renderStats();
+  }
+
+  function updateStatus(id, status) {
+    let list = getBookings();
+    const index = list.findIndex(b => b.id === id);
+    if (index === -1) return;
+    list[index].status = status;
+    saveBookings(list);
+    if (status === '已确认') {
+      const healthList = getHealthRecords();
+      if (!healthList.find(h => h.bookingId === id)) {
+        healthList.push(generateHealthRecord(list[index]));
+        saveHealthRecords(healthList);
+        alert(`预约 #${id.slice(-4)} 已确认，并自动生成了健康档案！`);
+      }
+    }
+    // 状态更新后，重新渲染排班看板
+    renderSchedule(qs('schedule-date').value);
+    loadBookings();
+  }
+
+  function deleteBooking(id) {
+    if (!confirm('确定要删除这条预约记录吗？')) return;
+    let list = getBookings();
+    list = list.filter(b => b.id !== id);
+    saveBookings(list);
+    let h = getHealthRecords();
+    h = h.filter(item => item.bookingId !== id);
+    saveHealthRecords(h);
+    renderSchedule(qs('schedule-date').value);
+    loadBookings();
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    if (localStorage.getItem('admin_token')) {
+      qs('login-area').style.display = 'none';
+      qs('admin-area').style.display = 'block';
+      initAdmin();
+    }
+    qs('refresh-btn').addEventListener('click', () => {
+      renderStaff();
+      renderSchedule(qs('schedule-date').value);
+      loadBookings();
+    });
+    qs('schedule-date').addEventListener('change', function() {
+      renderSchedule(this.value);
+    });
+    qs('clear-filter-btn').addEventListener('click', () => {
+      qs('search-input').value = ''; qs('status-filter').value = 'all'; qs('date-filter').value = '';
+      loadBookings();
+    });
+    let timer;
+    qs('search-input').addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(loadBookings, 350); });
+    qs('status-filter').addEventListener('change', loadBookings);
+    qs('date-filter').addEventListener('change', loadBookings);
+  });
+</script>
+</body>
+</html>
